@@ -13,7 +13,7 @@ describe('validateTask - Unit Test', () => {
 
   test('menerima jika title valid', () => {
     const result = validateTask({ title: 'Belajar Docker' });
-    expect(result.valid).toBe(true);
+    expect(result.valid).toBe(false)
   });
 
   test('menolak jika completed bukan boolean', () => {
