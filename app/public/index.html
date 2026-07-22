@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Task Portal — UAS Cloud Computing Multi-Container</title>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            accent: {
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.15), transparent 45%),
+                  radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.15), transparent 45%),
+                  #090d16;
+      background-attachment: fixed;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-input {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .glass-input:focus {
+      background: rgba(30, 41, 59, 0.9);
+      border-color: #818cf8;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="text-slate-200 antialiased min-h-screen flex flex-col justify-between p-4 sm:p-6 md:p-10 font-sans selection:bg-indigo-500 selection:text-white">
+
+  <!-- Main Container -->
+  <div class="max-w-5xl mx-auto w-full space-y-6">
+    
+    <!-- Top Bar / Header -->
+    <header class="glass-card p-6 rounded-3xl shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative overflow-hidden">
+      <!-- Glow background accent -->
+      <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <div class="flex items-center gap-4 z-10">
+        <div class="w-13 h-13 p-3 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-white text-2xl font-bold">
+          ⚡
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-400">
+              Cloud Task Portal
+            </h1>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              v2.0
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Sistem Manajemen Tugas Multi-Container &bull; Node.js, PostgreSQL & Docker
+          </p>
+        </div>
+      </div>
+
+      <!-- Realtime Health Badge -->
+      <div id="healthBadge" class="z-10 inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl text-xs font-semibold bg-slate-800/80 text-slate-300 border border-slate-700/80 shadow-inner">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]"></span>
+        <span id="healthText">Menghubungkan...</span>
+      </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="glass-card p-4 rounded-2xl flex items-center gap-4 border border-slate-800">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center text-lg">
+          📊
+        </div>
+        <div>
+          <div class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Total Tugas</div>
+          <div id="statTotal" class="text-xl font-bold text-white">0</div>
+        </div>
+      </div>
+      <div class="glass-card p-4 rounded-2xl flex items-center gap-4 border border-slate-800">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg">
+          ✅
+        </div>
+        <div>
+          <div class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Tugas Selesai</div>
+          <div id="statSelesai" class="text-xl font-bold text-emerald-400">0</div>
+        </div>
+      </div>
+      <div class="glass-card p-4 rounded-2xl flex items-center gap-4 border border-slate-800">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-lg">
+          ⏳
+        </div>
+        <div>
+          <div class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Belum Selesai</div>
+          <div id="statBelum" class="text-xl font-bold text-amber-400">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="hidden transition-all duration-300 transform p-4 rounded-2xl shadow-xl border text-xs sm:text-sm flex items-center justify-between gap-3">
+      <span id="toastMsg"></span>
+      <button onclick="hideToast()" class="text-slate-400 hover:text-white font-bold">&times;</button>
+    </div>
+
+    <!-- Form Input / Edit Card -->
+    <div class="glass-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-800 relative">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">✍️</span>
+          <h2 class="text-lg font-bold text-white" id="formTitle">Tambah / Edit Data Tugas</h2>
+        </div>
+        <span id="editModeBadge" class="hidden px-3 py-1 text-xs font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Mode Edit Aktif</span>
+      </div>
+
+      <form id="taskForm" onsubmit="handleFormSubmit(event)" class="space-y-5">
+        <input type="hidden" id="taskId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Kategori Tugas</label>
+            <select id="kategori" class="glass-input w-full px-4 py-3 rounded-xl text-sm text-slate-100 focus:outline-none transition-all">
+              <option value="Individu" class="bg-slate-900 text-slate-200">Individu</option>
+              <option value="Kelompok" class="bg-slate-900 text-slate-200">Kelompok</option>
+            </select>
+          </div>
+          <div class="sm:col-span-3">
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Nama Mahasiswa / Kelompok <span class="text-rose-400">*</span></label>
+            <input type="text" id="nama" placeholder="Masukkan nama mahasiswa atau nama kelompok" required class="glass-input w-full px-4 py-3 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition-all">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">NIM</label>
+            <input type="text" id="nim" placeholder="Contoh: 220101001" class="glass-input w-full px-4 py-3 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition-all">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Jurusan / Program Studi</label>
+            <input type="text" id="jurusan" placeholder="Contoh: Teknik Informatika" class="glass-input w-full px-4 py-3 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition-all">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Judul Tugas / Deskripsi Project</label>
+            <input type="text" id="title" placeholder="Contoh: Implementasi Docker Multi-Container & CI/CD" class="glass-input w-full px-4 py-3 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition-all">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Status Pengerjaan</label>
+            <select id="completed" class="glass-input w-full px-4 py-3 rounded-xl text-sm text-slate-100 focus:outline-none transition-all">
+              <option value="false" class="bg-slate-900 text-amber-300">⏳ Belum Selesai</option>
+              <option value="true" class="bg-slate-900 text-emerald-300">✅ Selesai (Sudah Dikerjakan)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button type="submit" id="btnSubmit" class="px-7 py-3 bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all transform hover:-translate-y-0.5 focus:outline-none">
+            Simpan Data
+          </button>
+          <button type="button" id="btnCancel" onclick="resetForm()" class="hidden px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl border border-slate-700 transition-all">
+            Batal
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Data Table Card -->
+    <div class="glass-card rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
+      <div class="p-6 border-b border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">🚀</span>
+          <h2 class="text-lg font-bold text-white">Daftar Tugas Terdaftar</h2>
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <!-- Filter Kategori -->
+          <select id="filterKategori" onchange="renderTable()" class="glass-input px-3.5 py-2 rounded-xl text-xs text-slate-200 focus:outline-none">
+            <option value="ALL" class="bg-slate-900">Semua Kategori</option>
+            <option value="Individu" class="bg-slate-900">Individu</option>
+            <option value="Kelompok" class="bg-slate-900">Kelompok</option>
+          </select>
+          <button onclick="fetchTasks()" class="px-3.5 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5">
+            <span>🔄</span> Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="bg-slate-900/80 border-b border-slate-800 text-[11px] uppercase font-bold text-slate-400 tracking-wider">
+              <th class="py-4 px-4 w-14 text-center">ID</th>
+              <th class="py-4 px-4 w-28">Kategori</th>
+              <th class="py-4 px-4">Anggota / Mahasiswa</th>
+              <th class="py-4 px-4">Judul Tugas</th>
+              <th class="py-4 px-4 w-36 text-center">Status (Klik Ubah)</th>
+              <th class="py-4 px-4 w-36 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="taskTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+            <tr>
+              <td colspan="6" class="text-center py-12 text-slate-500">
+                Memuat data dari database PostgreSQL...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="text-center text-xs text-slate-500 mt-10">
+    Cloud Task Portal &bull; UAS Cloud Computing Multi-Container Architecture
+  </footer>
+
+  <script>
+    const API_URL = '/tasks';
+    let rawTasks = [];
+
+    // Health check function
+    async function checkHealth() {
+      const badge = document.getElementById('healthBadge');
+      const text = document.getElementById('healthText');
+      try {
+        const res = await fetch('/health');
+        const data = await res.json();
+
+        if (data.status === 'ok') {
+          badge.className = 'z-10 inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 shadow-inner';
+          text.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> DB Terhubung';
+        } else {
+          badge.className = 'z-10 inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30';
+          text.innerText = 'DB Bermasalah';
+        }
+      } catch (err) {
+        badge.className = 'z-10 inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl text-xs font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30';
+        text.innerText = 'Server Offline';
+      }
+    }
+
+    // Fetch tasks from API
+    async function fetchTasks() {
+      const tbody = document.getElementById('taskTableBody');
+      try {
+        const res = await fetch(API_URL);
+        rawTasks = await res.json();
+        updateStats();
+        renderTable();
+      } catch (err) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-10 text-rose-400 text-sm">
+              ⚠️ Gagal mengambil data dari server.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Update Top Stats
+    function updateStats() {
+      if (!Array.isArray(rawTasks)) return;
+      const total = rawTasks.length;
+      const selesai = rawTasks.filter(t => t.completed).length;
+      const belum = total - selesai;
+
+      document.getElementById('statTotal').innerText = total;
+      document.getElementById('statSelesai').innerText = selesai;
+      document.getElementById('statBelum').innerText = belum;
+    }
+
+    // Render Table Body
+    function renderTable() {
+      const tbody = document.getElementById('taskTableBody');
+      const filter = document.getElementById('filterKategori').value;
+
+      let filtered = Array.isArray(rawTasks) ? rawTasks : [];
+      if (filter !== 'ALL') {
+        filtered = filtered.filter(t => (t.kategori || 'Individu') === filter);
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-14 text-slate-500">
+              <div class="flex flex-col items-center gap-2">
+                <span class="text-3xl opacity-50">📂</span>
+                <p class="text-sm font-medium">Belum ada data tugas terdaftar.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(task => {
+        const kategori = task.kategori || 'Individu';
+        const nama = task.nama || task.title || '-';
+        const nim = task.nim ? ` (${task.nim})` : '';
+        const jurusan = task.jurusan ? ` &bull; ${task.jurusan}` : '';
+        const title = task.title && task.title !== task.nama ? task.title : '-';
+        const isCompleted = task.completed;
+
+        const katBadgeClass = kategori === 'Kelompok' 
+          ? 'bg-purple-500/15 text-purple-300 border-purple-500/30' 
+          : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition-colors">
+            <td class="py-4 px-4 font-mono font-bold text-slate-400 text-center">${task.id}</td>
+            <td class="py-4 px-4">
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${katBadgeClass}">
+                ${kategori}
+              </span>
+            </td>
+            <td class="py-4 px-4">
+              <div class="font-semibold text-white">${escapeHtml(nama)}<span class="text-indigo-400 text-xs font-normal">${escapeHtml(nim)}</span></div>
+              <div class="text-xs text-slate-400 mt-0.5">${escapeHtml(jurusan.replace('&bull;', '•'))}</div>
+            </td>
+            <td class="py-4 px-4 text-slate-300 font-medium">${escapeHtml(title)}</td>
+            <td class="py-4 px-4 text-center">
+              <button onclick="toggleStatus(${task.id}, ${!isCompleted})" 
+                      title="Klik untuk mengubah status tugas"
+                      class="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-sm transform active:scale-95 ${isCompleted ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'}">
+                ${isCompleted ? '✅ Selesai' : '⏳ Belum Selesai'}
+              </button>
+            </td>
+            <td class="py-4 px-4 text-center space-x-2">
+              <button onclick="editTask(${task.id}, '${escapeHtml(task.kategori)}', '${escapeHtml(task.nama)}', '${escapeHtml(task.nim)}', '${escapeHtml(task.jurusan)}', '${escapeHtml(task.title)}', ${isCompleted})" 
+                      class="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-semibold transition-all">
+                Edit
+              </button>
+              <button onclick="deleteTask(${task.id})" 
+                      class="px-3 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-semibold transition-all">
+                Hapus
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Submit Form (Add / Edit)
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('taskId').value;
+      const kategori = document.getElementById('kategori').value;
+      const nama = document.getElementById('nama').value.trim();
+      const nim = document.getElementById('nim').value.trim();
+      const jurusan = document.getElementById('jurusan').value.trim();
+      const titleInput = document.getElementById('title').value.trim();
+      const completed = document.getElementById('completed').value === 'true';
+
+      const title = titleInput || `${nama}${nim ? ' (' + nim + ')' : ''}`;
+      const payload = { kategori, nama, nim, jurusan, title, completed };
+
+      try {
+        let res;
+        if (id) {
+          res = await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        const data = await res.json();
+        if (!res.ok) {
+          showToast(data.error || 'Terjadi kesalahan saat menyimpan data.', 'error');
+          return;
+        }
+
+        showToast(id ? 'Data berhasil diperbarui!' : 'Data tugas berhasil ditambahkan!', 'success');
+        resetForm();
+        fetchTasks();
+      } catch (err) {
+        showToast('Gagal terhubung ke server.', 'error');
+      }
+    }
+
+    // Populate Edit Form
+    function editTask(id, kategori, nama, nim, jurusan, title, completed) {
+      document.getElementById('taskId').value = id;
+      document.getElementById('kategori').value = kategori || 'Individu';
+      document.getElementById('nama').value = nama || '';
+      document.getElementById('nim').value = nim || '';
+      document.getElementById('jurusan').value = jurusan || '';
+      document.getElementById('title').value = title || '';
+      document.getElementById('completed').value = completed ? 'true' : 'false';
+
+      document.getElementById('formTitle').innerText = `Edit Task #${id}`;
+      document.getElementById('editModeBadge').classList.remove('hidden');
+      document.getElementById('btnSubmit').innerText = 'Update Data';
+      document.getElementById('btnCancel').classList.remove('hidden');
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Reset Form
+    function resetForm() {
+      document.getElementById('taskForm').reset();
+      document.getElementById('taskId').value = '';
+      document.getElementById('formTitle').innerText = 'Tambah / Edit Data Tugas';
+      document.getElementById('editModeBadge').classList.add('hidden');
+      document.getElementById('btnSubmit').innerText = 'Simpan Data';
+      document.getElementById('btnCancel').classList.add('hidden');
+    }
+
+    // Toggle Status
+    async function toggleStatus(id, newCompletedState) {
+      try {
+        const res = await fetch(`${API_URL}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ completed: newCompletedState })
+        });
+        if (res.ok) {
+          showToast(newCompletedState ? '✅ Status tugas diubah menjadi SELESAI!' : '⏳ Status tugas diubah menjadi BELUM SELESAI.', 'success');
+          fetchTasks();
+        } else {
+          showToast('Gagal mengubah status tugas.', 'error');
+        }
+      } catch (err) {
+        showToast('Gagal terhubung ke server.', 'error');
+      }
+    }
+
+    // Delete Task
+    async function deleteTask(id) {
+      if (!confirm(`Apakah Anda yakin ingin menghapus tugas #${id}?`)) return;
+
+      try {
+        const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast(`Data #${id} berhasil dihapus.`, 'success');
+          fetchTasks();
+        } else {
+          showToast('Gagal menghapus data.', 'error');
+        }
+      } catch (err) {
+        showToast('Gagal terhubung ke server.', 'error');
+      }
+    }
+
+    // Toast Utility
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      toastMsg.innerText = message;
+
+      if (type === 'error') {
+        toast.className = 'p-4 rounded-2xl shadow-xl text-xs sm:text-sm flex items-center justify-between gap-3 bg-rose-500/20 text-rose-200 border border-rose-500/30';
+      } else {
+        toast.className = 'p-4 rounded-2xl shadow-xl text-xs sm:text-sm flex items-center justify-between gap-3 bg-emerald-500/20 text-emerald-200 border border-emerald-500/30';
+      }
+      toast.classList.remove('hidden');
+      setTimeout(hideToast, 4000);
+    }
+
+    function hideToast() {
+      document.getElementById('toast').classList.add('hidden');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Initialize
+    checkHealth();
+    fetchTasks();
+  </script>
+</body>
+</html>

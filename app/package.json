@@ -1,0 +1,22 @@
+{
+  "name": "uas-cloud-computing-app",
+  "version": "1.0.0",
+  "description": "REST API Task Manager - UAS Cloud Computing (Docker + Compose + CI/CD)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest --runInBand --detectOpenHandles"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.11.5",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
